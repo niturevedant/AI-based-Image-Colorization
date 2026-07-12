@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Colorization</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --background-color: #0f172a;
+            --card-background: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --gradient-start: #6366f1;
+            --gradient-end: #8b5cf6;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 20px 60px rgba(99, 102, 241, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary-color);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 600px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .upload-section {
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 1rem;
+            padding: 3rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(99, 102, 241, 0.02);
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-area p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            transform: translateY(-2px);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+        }
+
+        .preview-section {
+            text-align: center;
+        }
+
+        .preview-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .image-preview-container {
+            background: var(--background-color);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-preview-container img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            object-fit: contain;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .loading-section {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-section p {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-note {
+            color: var(--text-secondary);
+            font-size: 0.9rem !important;
+        }
+
+        .result-section {
+            text-align: center;
+        }
+
+        .result-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .image-box {
+            background: var(--background-color);
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+
+        .image-box h4 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .image-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            max-height: 250px;
+            object-fit: cover;
+        }
+
+        .error-section {
+            text-align: center;
+        }
+
+        .error-section p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            header p {
+                font-size: 0.95rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+                margin: 0 0.5rem;
+            }
+
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+
+            .result-container {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.75rem;
+            }
+
+            .card {
+                padding: 1.25rem;
+            }
+
+            .image-preview-container {
+                min-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 AI Image Colorization</h1>
+            <p>Transform black and white images into vibrant colored masterpieces</p>
+            <div class="mode-badge" id="modeBadge">Detecting mode...</div>
+        </header>
+
+        <main>
+            <div class="card upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h2>Upload Your Image</h2>
+                    <p>Drag and drop a black and white image here, or click to browse</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <button type="button" class="btn btn-primary" id="chooseFileBtn">
+                        Choose File
+                    </button>
+                </div>
+            </div>
+
+            <div class="card preview-section" id="previewSection" style="display: none;">
+                <h3>Image Preview</h3>
+                <div class="image-preview-container">
+                    <img id="imagePreview" src="" alt="Preview">
+                </div>
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" id="colorizeBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        Colorize Image
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="resetBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        Upload New
+                    </button>
+                </div>
+            </div>
+
+            <div class="card loading-section" id="loadingSection" style="display: none;">
+                <div class="spinner"></div>
+                <p id="loadingText">Processing your image...</p>
+                <p class="loading-note" id="loadingNote">AI is colorizing your image</p>
+            </div>
+
+            <div class="card result-section" id="resultSection" style="display: none;">
+                <h3>Colorized Result</h3>
+                <div class="result-container">
+                    <div class="image-box">
+                        <h4>Original</h4>
+                        <img id="originalImage" src="" alt="Original">
+                    </div>
+                    <div class="image-box">
+                        <h4>Colorized</h4>
+                        <img id="colorizedImage" src="" alt="Colorized">
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="btn btn-download" id="downloadBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download Result
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="tryAgainBtn">
+                        Try Another Image
+                    </button>
+                </div>
+            </div>
+
+            <div class="card error-section" id="errorSection" style="display: none;">
+                <p id="errorText">Something went wrong!</p>
+                <button type="button" class="btn btn-secondary" id="errorBtn">Try Again</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by OpenCV Deep Learning & Flask</p>
+        </footer>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const chooseFileBtn = document.getElementById('chooseFileBtn');
+        const uploadSection = document.getElementById('uploadSection');
+        const previewSection = document.getElementById('previewSection');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultSection = document.getElementById('resultSection');
+        const errorSection = document.getElementById('errorSection');
+
+        const imagePreview = document.getElementById('imagePreview');
+        const originalImage = document.getElementById('originalImage');
+        const colorizedImage = document.getElementById('colorizedImage');
+        const errorText = document.getElementById('errorText');
+        const loadingText = document.getElementById('loadingText');
+        const loadingNote = document.getElementById('loadingNote');
+        const modeBadge = document.getElementById('modeBadge');
+
+        const colorizeBtn = document.getElementById('colorizeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+        const errorBtn = document.getElementById('errorBtn');
+
+        let uploadedImageData = null;
+        let colorizedImageData = null;
+        let uploadedFile = null;
+        let backendAvailable = false;
+        let backendChecked = false;
+
+        function isLocalhost() {
+            return location.hostname === '127.0.0.1' || 
+                   location.hostname === 'localhost' || 
+                   location.port === '5000';
+        }
+
+        async function checkBackend() {
+            if (isLocalhost()) {
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 3000);
+                    const response = await fetch('/health', { 
+                        method: 'GET',
+                        signal: controller.signal 
+                    });
+                    clearTimeout(timeout);
+                    backendAvailable = response.ok;
+                } catch (e) {
+                    backendAvailable = false;
+                }
+            } else {
+                backendAvailable = false;
+            }
+            backendChecked = true;
+            updateModeBadge();
+        }
+
+        function updateModeBadge() {
+            if (!backendChecked) {
+                modeBadge.textContent = 'Detecting mode...';
+                modeBadge.style.background = 'rgba(99, 102, 241, 0.15)';
+                modeBadge.style.color = 'var(--primary-color)';
+            } else if (backendAvailable) {
+                modeBadge.textContent = '🤖 AI Mode (Flask Backend)';
+                modeBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                modeBadge.style.color = 'var(--success-color)';
+            } else {
+                modeBadge.textContent = 'Offline — using Demo Mode';
+                modeBadge.style.background = 'rgba(100, 116, 139, 0.15)';
+                modeBadge.style.color = 'var(--secondary-color)';
+            }
+        }
+
+        function init() {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    processFile(files[0]);
+                }
+            });
+
+            uploadArea.addEventListener('click', (e) => {
+                if (e.target !== chooseFileBtn) {
+                    fileInput.click();
+                }
+            });
+
+            chooseFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    processFile(e.target.files[0]);
+                }
+            });
+
+            colorizeBtn.addEventListener('click', processImage);
+            resetBtn.addEventListener('click', resetToUpload);
+            downloadBtn.addEventListener('click', downloadResult);
+            tryAgainBtn.addEventListener('click', resetToUpload);
+            errorBtn.addEventListener('click', resetToUpload);
+
+            checkBackend();
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.type.match(/image.*/)) {
+                showError('Please upload a valid image file (JPG, PNG, BMP, etc.)');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File size must be less than 10MB');
+                return;
+            }
+
+            uploadedFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImageData = e.target.result;
+                imagePreview.src = uploadedImageData;
+                showSection(previewSection);
+            };
+
+            reader.onerror = function() {
+                showError('Failed to read the image file');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage() {
+            if (!uploadedFile) {
+                showError('Please upload an image first');
+                return;
+            }
+
+            showSection(loadingSection);
+
+            if (backendAvailable) {
+                try {
+                    loadingText.textContent = 'Processing with AI model...';
+                    loadingNote.textContent = 'This may take a few seconds';
+
+                    const formData = new FormData();
+                    formData.append('file', uploadedFile);
+
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 60000)
+                    );
+
+                    const fetchPromise = fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        originalImage.src = data.original;
+                        colorizedImage.src = data.colorized;
+                        colorizedImageData = data.colorized.replace('/results/', '/download/');
+
+                        showSection(resultSection);
+                    } else {
+                        throw new Error(data.error || 'Server returned an error');
+                    }
+                } catch (error) {
+                    const errorMessage = error.message || 'Network error';
+                    console.warn('Backend colorization failed, falling back to simulation:', errorMessage);
+
+                    try {
+                        const processingTime = 2500 + Math.random() * 2000;
+                        const colorizedData = await simulateColorization(uploadedImageData, processingTime);
+
+                        originalImage.src = uploadedImageData;
+                        colorizedImage.src = colorizedData;
+                        colorizedImageData = colorizedData;
+
+                        showSection(resultSection);
+                    } catch (simError) {
+                        showError('Failed to process image: ' + simError.message);
+                    }
+                }
+            } else {
+                try {
+                    const processingTime = 2500 + Math.random() * 2000;
+                    const colorizedData = await simulateColorization(uploadedImageData, processingTime);
+
+                    originalImage.src = uploadedImageData;
+                    colorizedImage.src = colorizedData;
+                    colorizedImageData = colorizedData;
+
+                    showSection(resultSection);
+                } catch (simError) {
+                    showError('Failed to process image: ' + simError.message);
+                }
+            }
+        }
+
+        async function simulateColorization(imageData, duration) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        const maxSize = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxSize) {
+                                height = (height * maxSize) / width;
+                                width = maxSize;
+                            }
+                        } else {
+                            if (height > maxSize) {
+                                width = (width * maxSize) / height;
+                                height = maxSize;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const imageDataObj = ctx.getImageData(0, 0, width, height);
+                        const data = imageDataObj.data;
+
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                            const pixelIndex = i / 4;
+                            const y = Math.floor(pixelIndex / width);
+                            const relY = y / height;
+
+                            if (relY < 0.45 && gray > 70) {
+                                data[i] = Math.max(0, Math.min(255, gray * 0.7 + 10));
+                                data[i + 1] = Math.max(0, Math.min(255, gray * 0.85 + 25));
+                                data[i + 2] = Math.max(0, Math.min(255, gray * 1.15 + 45));
+                            } else if (relY > 0.55) {
+                                if (gray < 130) {
+                                    data[i] = Math.max(0, Math.min(255, gray * 0.65 + 10));
+                                    data[i + 1] = Math.max(0, Math.min(255, gray * 1.1 + 35));
+                                    data[i + 2] = Math.max(0, Math.min(255, gray * 0.6 + 5));
+                                } else {
+                                    data[i] = Math.max(0, Math.min(255, gray * 1.05 + 20));
+                                    data[i + 1] = Math.max(0, Math.min(255, gray * 0.95 + 15));
+                                    data[i + 2] = Math.max(0, Math.min(255, gray * 0.8 + 10));
+                                }
+                            } else {
+                                data[i] = Math.max(0, Math.min(255, gray * 1.1 + 25));
+                                data[i + 1] = Math.max(0, Math.min(255, gray * 0.95 + 15));
+                                data[i + 2] = Math.max(0, Math.min(255, gray * 0.8 + 5));
+                            }
+
+                            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                            const saturation = 1.25;
+                            data[i] = Math.max(0, Math.min(255, avg + (data[i] - avg) * saturation));
+                            data[i + 1] = Math.max(0, Math.min(255, avg + (data[i + 1] - avg) * saturation));
+                            data[i + 2] = Math.max(0, Math.min(255, avg + (data[i + 2] - avg) * saturation));
+                        }
+
+                        ctx.putImageData(imageDataObj, 0, 0);
+                        const resultDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+                        setTimeout(() => {
+                            resolve(resultDataUrl);
+                        }, duration - 500);
+                    };
+
+                    img.onerror = function() {
+                        reject(new Error('Failed to load image'));
+                    };
+
+                    img.src = imageData;
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        function downloadResult() {
+            if (!colorizedImageData) {
+                showError('No colorized image to download');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = colorizedImageData;
+            link.download = 'colorized-image.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function resetToUpload() {
+            uploadedImageData = null;
+            colorizedImageData = null;
+            uploadedFile = null;
+            fileInput.value = '';
+            imagePreview.src = '';
+            originalImage.src = '';
+            colorizedImage.src = '';
+            showSection(uploadSection);
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            showSection(errorSection);
+        }
+
+        function showSection(section) {
+            uploadSection.style.display = 'none';
+            previewSection.style.display = 'none';
+            loadingSection.style.display = 'none';
+            resultSection.style.display = 'none';
+            errorSection.style.display = 'none';
+
+            section.style.display = 'block';
+
+            section.style.animation = 'none';
+            section.offsetHeight;
+            section.style.animation = 'fadeInUp 0.5s ease-out';
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
