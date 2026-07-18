@@ -1,63 +1,140 @@
 # AI-Based Image Colorization
 
-Transform black and white images into vibrant colored images using deep learning and OpenCV.
+## Overview
+
+AI-Based Image Colorization is a deep learning project that automatically converts grayscale (black-and-white) images into realistic color images. The project uses a pre-trained Convolutional Neural Network (CNN) model through OpenCV's Deep Neural Network (DNN) module to predict the missing color information in an image.
+
+The model has been trained on a large dataset of color images, allowing it to generate natural-looking colors without any manual editing.
+
+---
 
 ## Features
 
-- Upload grayscale or color images
-- Real AI-based colorization using OpenCV DNN and the Caffe colorization model
-- Preview images before processing
-- Download colorized results
-- Works on desktop and mobile (same WiFi)
-- Demo mode available when Flask backend is not running
+- Automatically colorizes grayscale images.
+- Uses a pre-trained deep learning model.
+- Generates realistic and visually appealing results.
+- Supports common image formats such as JPG, JPEG, and PNG.
+- Simple implementation using Python and OpenCV.
 
-## How to Run
+---
 
-### 1. Install Dependencies
+## Technologies Used
 
-```bash
-pip install -r AI-Colorization/requirements.txt
-```
+- Python
+- OpenCV
+- NumPy
+- Deep Learning (CNN)
+- Caffe Pre-trained Model
 
-### 2. Start the Flask Backend
+---
 
-```bash
-python AI-Colorization/app.py
-```
+## Project Workflow
 
-The server starts at:
-- `http://127.0.0.1:5000` on your computer
-- `http://<your-local-ip>:5000` on other devices on the same WiFi
+1. The user provides a grayscale image as input.
+2. The image is loaded using OpenCV.
+3. The pre-trained AI colorization model is loaded.
+4. The input image is converted to the LAB color space.
+5. The L (Lightness) channel is extracted and passed to the neural network.
+6. The model predicts the A and B color channels.
+7. The predicted channels are combined with the original L channel.
+8. The LAB image is converted back to RGB.
+9. The final colorized image is displayed and saved.
 
-### 3. Open in Browser
-
-Go to `http://127.0.0.1:5000/` to use the full AI version.
-
-### Demo Mode
-
-If you just open `index.html` directly or use VS Code Live Server, the app works in **Demo Mode** using client-side simulation — no backend required.
-
-## Tech Stack
-
-- **Backend:** Flask (Python)
-- **AI Model:** OpenCV DNN with Caffe colorization model
-- **Frontend:** HTML, CSS, JavaScript
-- **Processing:** OpenCV, NumPy
+---
 
 ## Project Structure
 
-- `index.html` — Unified frontend (works with Flask and Live Server)
-- `script.js` — Frontend logic with backend detection
-- `style.css` — Styling
-- `AI-Colorization/app.py` — Flask backend
-- `AI-Colorization/requirements.txt` — Python dependencies
-- `AI-Colorization/templates/index.html` — Flask template
-- `AI-Colorization/static/` — CSS and JS served by Flask
+```
+AI-Image-Colorization/
+│
+├── model.py
+├── colorization_release_v2.caffemodel
+├── colorization_deploy_v2.prototxt
+├── pts_in_hull.npy
+├── images/
+│   ├── input.jpg
+│   └── output.jpg
+├── README.md
+└── requirements.txt
+```
 
-## Notes
+---
 
-- The AI model (~123 MB) is downloaded automatically on first run and stored in `AI-Colorization/model/`
-- Uploaded images and results are stored temporarily in `uploads/` and `results/`
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/your-username/AI-Image-Colorization.git
+```
+
+Move to the project directory:
+
+```bash
+cd AI-Image-Colorization
+```
+
+Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Usage
+
+Run the project using:
+
+```bash
+python model.py
+```
+
+After execution, the colorized image will be generated and saved automatically.
+
+---
+
+## Input
+
+- Grayscale Image (.jpg, .jpeg, .png)
+
+## Output
+
+- AI Colorized Image
+
+---
+
+## Future Enhancements
+
+- Video colorization
+- Real-time webcam colorization
+- High-resolution image support
+- Web application using Streamlit
+- GPU acceleration for faster processing
+
+---
+
+## Applications
+
+- Restoring old photographs
+- Historical image restoration
+- Photo editing
+- Computer Vision research
+- Digital media enhancement
+
+---
+
+## Author
+
+**Vedant Niture**
+
+GitHub: https://github.com/your-username
+
+---
+
+## License
+
+This project is intended for educational and learning purposes.
 - These folders are ignored by git and recommended to ignore manually as well
 
 ## Author
