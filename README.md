@@ -128,7 +128,7 @@ After execution, the colorized image will be generated and saved automatically.
 
 **Vedant Niture**
 
-GitHub: https://github.com/your-username
+GitHub: https://github.com/niturevedant
 
 ---
 
